@@ -5,6 +5,7 @@ import {
   getAdminScoreDelta,
   getGaugeState,
   getPhaseForScore,
+  isResetConfirmationValid,
   getTeamBarMaximum,
   getTeamBarFillPercent,
   getTopTeams,
@@ -82,4 +83,12 @@ test('game score controls apply the selected direction to either signed input', 
   assert.equal(getAdminScoreDelta('-10', 1), 10);
   assert.equal(getAdminScoreDelta('', -1), null);
   assert.equal(getAdminScoreDelta('1.5', -1), null);
+});
+
+test('reset confirmation accepts mobile text casing but requires the full word', () => {
+  assert.equal(isResetConfirmationValid('RESET'), true);
+  assert.equal(isResetConfirmationValid('reset'), true);
+  assert.equal(isResetConfirmationValid(' Reset '), true);
+  assert.equal(isResetConfirmationValid('rese'), false);
+  assert.equal(isResetConfirmationValid(''), false);
 });

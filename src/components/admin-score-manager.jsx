@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatedNumber } from '@/components/animated-number.jsx';
 import { GAMES, TEAMS } from '@/lib/catalog.js';
+import { isResetConfirmationValid } from '@/lib/scoreboard.js';
 
 const formatTime = (value) => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 
@@ -18,6 +19,7 @@ export function AdminScoreManager() {
   const [message, setMessage] = useState('');
   const [resetOpen, setResetOpen] = useState(false);
   const [resetConfirmation, setResetConfirmation] = useState('');
+  const [resetError, setResetError] = useState('');
 
   const load = useCallback(async () => {
     setError('');
@@ -68,8 +70,8 @@ export function AdminScoreManager() {
 
   async function resetScores(event) {
     event.preventDefault();
-    if (resetConfirmation.trim() !== 'RESET') return;
-    setBusy('reset'); setError(''); setMessage('');
+    if (!isResetConfirmationValid(resetConfirmation)) return;
+    setBusy('reset'); setError(''); setResetError(''); setMessage('');
     try {
       const response = await fetch('/api/admin/reset-scores', {
         method: 'POST',
@@ -84,7 +86,7 @@ export function AdminScoreManager() {
       setExpanded({});
       setForms({});
       await load();
-    } catch (cause) { setError(cause.message || 'Could not reset the scores.'); }
+    } catch (cause) { setResetError(cause.message || 'Could not reset the scores.'); }
     finally { setBusy(''); }
   }
 
@@ -107,7 +109,7 @@ export function AdminScoreManager() {
       <button className="secondary-button" type="button" onClick={load} disabled={loading || Boolean(busy)}>Refresh scores</button>
       <a className="secondary-button" href="/finalize" target="_blank" rel="noreferrer">Preview public reveal</a>
     </div>
-    <div className="reset-controls"><button className="danger-button" type="button" disabled={Boolean(busy) || loading} onClick={() => { setResetConfirmation(''); setResetOpen(true); }}>Reset all scores</button></div>
+    <div className="reset-controls"><button className="danger-button" type="button" disabled={Boolean(busy) || loading} onClick={() => { setResetConfirmation(''); setResetError(''); setResetOpen(true); }}>Reset all scores</button></div>
     {loading ? <div className="empty-state">Loading team scores…</div> : <div className="team-admin-list">
       {TEAMS.map((team, index) => {
         const entries = historyByTeam[team.id].filter((entry) => filter === 'all' || entry.game_id === filter);
@@ -133,8 +135,9 @@ export function AdminScoreManager() {
         <h2 id="reset-dialog-title">Clear every score?</h2>
         <p>This deletes all recorded score entries, resets every team and game total to zero, and unlocks the public final reveal. The reset itself will be recorded with your admin username and timestamp.</p>
         <label className="field-label" htmlFor="reset-confirmation">Type <span className="reset-confirm-word">RESET</span> to confirm</label>
-        <input className="field-input" id="reset-confirmation" autoComplete="off" value={resetConfirmation} onChange={(event) => setResetConfirmation(event.target.value)} />
-        <div className="reset-dialog-actions"><button className="secondary-button" type="button" disabled={busy === 'reset'} onClick={() => setResetOpen(false)}>Cancel</button><button className="danger-button" type="submit" disabled={busy === 'reset' || resetConfirmation.trim() !== 'RESET'}>{busy === 'reset' ? 'Resetting…' : 'Delete all scores'}</button></div>
+        <input className="field-input" id="reset-confirmation" autoComplete="off" autoCapitalize="characters" autoCorrect="off" spellCheck={false} placeholder="RESET" value={resetConfirmation} onChange={(event) => { setResetConfirmation(event.target.value); setResetError(''); }} />
+        {resetError && <div className="form-error" role="alert">{resetError}</div>}
+        <div className="reset-dialog-actions"><button className="secondary-button" type="button" disabled={busy === 'reset'} onClick={() => setResetOpen(false)}>Cancel</button><button className="danger-button" type="submit" disabled={busy === 'reset' || !isResetConfirmationValid(resetConfirmation)}>{busy === 'reset' ? 'Resetting…' : 'Delete all scores'}</button></div>
       </motion.form>
     </motion.div>}</AnimatePresence>
   </>;

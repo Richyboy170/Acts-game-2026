@@ -22,11 +22,17 @@ export async function POST(request) {
     });
     if (error) {
       if (error.code === 'P0001') return jsonError(error.message);
+      if (error.code === 'PGRST202' || error.code === '42883') {
+        return jsonError("Supabase cannot find reset_event_scores. Confirm migration 202610090002 ran on the project configured in Vercel, then reload the Supabase API schema cache with: NOTIFY pgrst, 'reload schema';", 503);
+      }
+      if (error.code === '42501') {
+        return jsonError('Supabase denied the reset function. Confirm Vercel uses the server-side secret/service-role key and that migration 202610090002 granted it permission.', 503);
+      }
       throw error;
     }
     return NextResponse.json({ ...data, deletedEntries: data?.deleted_entries ?? 0 });
   } catch (error) {
-    console.error('Unable to reset event scores:', error.message);
+    console.error('Unable to reset event scores:', { code: error.code, message: error.message });
     return jsonError('The scores could not be reset. Apply the event reset migration and check the Supabase setup.', 503);
   }
 }

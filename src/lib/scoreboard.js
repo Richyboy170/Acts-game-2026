@@ -30,6 +30,10 @@ export function getAdminScoreDelta(value, direction) {
   return amount * direction;
 }
 
+export function isResetConfirmationValid(value) {
+  return typeof value === 'string' && value.trim().toUpperCase() === 'RESET';
+}
+
 export function getGaugeState(score) {
   const total = Math.max(0, Math.floor(Number(score) || 0));
   const additionalBands = total <= FINAL_GAUGE_THRESHOLD
