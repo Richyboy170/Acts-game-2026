@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   aggregateTeamTotals,
+  getAdminScoreDelta,
   getGaugeState,
   getPhaseForScore,
   getTeamBarMaximum,
@@ -72,4 +73,13 @@ test('validates awards and prevents corrections below zero', () => {
   assert.equal(validateScoreChange({ kind: 'award', delta: -1, currentTotal: 10 }), 'Awards must add a positive whole number of points.');
   assert.equal(validateScoreChange({ kind: 'adjustment', delta: -12, currentTotal: 10 }), 'A correction cannot reduce a team below zero points for a game.');
   assert.equal(validateScoreChange({ kind: 'adjustment', delta: 0, currentTotal: 10 }), 'Enter a non-zero whole number of points.');
+});
+
+test('game score controls apply the selected direction to either signed input', () => {
+  assert.equal(getAdminScoreDelta('10', 1), 10);
+  assert.equal(getAdminScoreDelta('10', -1), -10);
+  assert.equal(getAdminScoreDelta('-10', -1), -10);
+  assert.equal(getAdminScoreDelta('-10', 1), 10);
+  assert.equal(getAdminScoreDelta('', -1), null);
+  assert.equal(getAdminScoreDelta('1.5', -1), null);
 });

@@ -52,7 +52,7 @@ export function FinalizeReveal() {
         : 'Every contribution matters. Thank you, teams, for bringing your best.'}</p>
       <AnimatePresence mode="wait">
         {state.is_locked ? <motion.section key="podium" className="podium" aria-label="Top three teams" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ staggerChildren: .15 }}>
-          {podiumGroups.map(({ rank, teams }, index) => <motion.article key={rank} className={`podium-card${rank === 1 ? ' first' : ''}${teams.length > 1 ? ' tied' : ''}`} initial={reduceMotion ? false : { opacity: 0, y: 50, scale: .92 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: index * .22, type: 'spring', stiffness: 70, damping: 14 }}>
+          {podiumGroups.map(({ rank, teams }, index) => <motion.article key={rank} className={`podium-card rank-${rank}${rank === 1 ? ' first' : ''}${teams.length > 1 ? ' tied' : ''}`} initial={reduceMotion ? false : { opacity: 0, y: 50, scale: .92 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: index * .22, type: 'spring', stiffness: 70, damping: 14 }}>
             <div className="podium-place">{rank === 1 ? 'Champion' : `${rank}${rank === 2 ? 'nd' : 'rd'} Place`}{teams.length > 1 ? ' · Tied' : ''}</div><div className="podium-crown" aria-hidden="true">{rank === 1 ? '✦' : '✧'}</div><div className={`podium-teams${teams.length > 1 ? ' has-ties' : ''}`}>
               {teams.map((row) => <div className="podium-team" key={row.team_id} style={{ '--team-color': row.team.color }}><div className="podium-crest"><img src={row.team.image} alt={`${row.team.name} crest`} /></div><h2 className="podium-team-name">{row.team_name || row.team.name}</h2></div>)}
             </div><div className="podium-pedestal" />

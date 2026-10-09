@@ -24,6 +24,12 @@ export function getPhaseForScore(score) {
   return 1 + PHASE_THRESHOLDS.filter((threshold) => value >= threshold).length;
 }
 
+export function getAdminScoreDelta(value, direction) {
+  const amount = Math.abs(Number(value));
+  if (!Number.isInteger(amount) || amount <= 0 || ![1, -1].includes(direction)) return null;
+  return amount * direction;
+}
+
 export function getGaugeState(score) {
   const total = Math.max(0, Math.floor(Number(score) || 0));
   const additionalBands = total <= FINAL_GAUGE_THRESHOLD

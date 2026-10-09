@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatedNumber } from '@/components/animated-number.jsx';
 import { GAME_BY_ID, TEAMS } from '@/lib/catalog.js';
-import { getPhaseForScore } from '@/lib/scoreboard.js';
+import { getAdminScoreDelta, getPhaseForScore } from '@/lib/scoreboard.js';
 
 export function AdminGame() {
   const params = useParams();
@@ -43,12 +43,11 @@ export function AdminGame() {
 
   async function changeScore(teamId, direction) {
     if (!game) return;
-    const points = Number(values[teamId]);
-    if (!Number.isInteger(points) || points <= 0) {
-      setMessage({ type: 'error', text: 'Enter a positive whole number of points.' });
+    const delta = getAdminScoreDelta(values[teamId], direction);
+    if (delta === null) {
+      setMessage({ type: 'error', text: 'Enter a non-zero whole number of points.' });
       return;
     }
-    const delta = points * direction;
     setBusyTeam(teamId);
     setMessage(null);
     try {
@@ -84,7 +83,7 @@ export function AdminGame() {
       <div className="page-intro">
         <div className="eyebrow">Phase {phase} · {eventTotal.toLocaleString('en-US')} event points</div>
         <h1>{game.name}</h1>
-        <p>Add points or remove a mistaken score for a team below. Every change is recorded in the score history.</p>
+        <p>Enter a whole-number amount, then choose Add or Remove. Every change is recorded in the score history.</p>
       </div>
       {message && <motion.div className={message.type === 'error' ? 'form-error' : 'form-success'} initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} role="status">{message.text}</motion.div>}
       {pageError && <div className="form-error" role="alert">{pageError}</div>}
@@ -99,7 +98,7 @@ export function AdminGame() {
               </div>
               <label className="screen-reader-only" htmlFor={`award-${team.id}`}>Points to add or remove for {team.name}</label>
               <div className="award-points-control">
-                <input id={`award-${team.id}`} className="field-input" inputMode="numeric" type="number" min="1" step="1" placeholder="Points" value={values[team.id] ?? ''} onChange={(event) => setValues((current) => ({ ...current, [team.id]: event.target.value }))} />
+                <input id={`award-${team.id}`} className="field-input" inputMode="numeric" type="number" step="1" placeholder="Amount" value={values[team.id] ?? ''} onChange={(event) => setValues((current) => ({ ...current, [team.id]: event.target.value }))} />
                 <motion.button className="primary-button award-submit" type="button" onClick={() => changeScore(team.id, 1)} disabled={busyTeam !== null} whileTap={{ scale: .97 }}>
                   {busyTeam === team.id ? 'Saving…' : 'Add points'}
                 </motion.button>
