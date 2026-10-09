@@ -36,7 +36,11 @@ export function FinalizeReveal() {
   const totalScore = aggregateTeamTotals(totals, TEAMS.map((team) => team.id)).reduce((sum, team) => sum + team.total, 0);
   const phase = getPhaseForScore(totalScore);
   const winners = (state.results || []).map((row) => ({ ...row, team: TEAM_BY_ID[row.team_id] })).filter((row) => row.team);
-  const podium = [...winners].sort((a, b) => (a.rank === 2 ? -1 : b.rank === 2 ? 1 : a.rank - b.rank));
+  const podium = [...winners].sort((a, b) => a.rank - b.rank);
+  const podiumGroups = [...new Set(podium.map((row) => row.rank))].map((rank) => ({
+    rank,
+    teams: podium.filter((row) => row.rank === rank),
+  }));
 
   return <main className="reveal-page">
     <div className="reveal-backdrop" style={{ backgroundImage: `url("${PHASE_BACKGROUNDS[phase]}")` }} />
@@ -48,8 +52,10 @@ export function FinalizeReveal() {
         : 'Every contribution matters. Thank you, teams, for bringing your best.'}</p>
       <AnimatePresence mode="wait">
         {state.is_locked ? <motion.section key="podium" className="podium" aria-label="Top three teams" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ staggerChildren: .15 }}>
-          {podium.map((row, index) => <motion.article key={`${row.rank}-${row.team_id}`} className={`podium-card${row.rank === 1 ? ' first' : ''}`} style={{ '--team-color': row.team.color }} initial={reduceMotion ? false : { opacity: 0, y: 50, scale: .92 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: index * .22, type: 'spring', stiffness: 70, damping: 14 }}>
-            <div className="podium-place">{row.rank === 1 ? 'Champion' : `${row.rank}${row.rank === 2 ? 'nd' : 'rd'} Place`}</div><div className="podium-crown" aria-hidden="true">{row.rank === 1 ? '✦' : '✧'}</div><div className="podium-crest"><img src={row.team.image} alt={`${row.team.name} crest`} /></div><h2 className="podium-team-name">{row.team_name || row.team.name}</h2><div className="podium-pedestal" />
+          {podiumGroups.map(({ rank, teams }, index) => <motion.article key={rank} className={`podium-card${rank === 1 ? ' first' : ''}${teams.length > 1 ? ' tied' : ''}`} initial={reduceMotion ? false : { opacity: 0, y: 50, scale: .92 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: index * .22, type: 'spring', stiffness: 70, damping: 14 }}>
+            <div className="podium-place">{rank === 1 ? 'Champion' : `${rank}${rank === 2 ? 'nd' : 'rd'} Place`}{teams.length > 1 ? ' · Tied' : ''}</div><div className="podium-crown" aria-hidden="true">{rank === 1 ? '✦' : '✧'}</div><div className={`podium-teams${teams.length > 1 ? ' has-ties' : ''}`}>
+              {teams.map((row) => <div className="podium-team" key={row.team_id} style={{ '--team-color': row.team.color }}><div className="podium-crest"><img src={row.team.image} alt={`${row.team.name} crest`} /></div><h2 className="podium-team-name">{row.team_name || row.team.name}</h2></div>)}
+            </div><div className="podium-pedestal" />
           </motion.article>)}
         </motion.section> : <motion.section key="waiting" className="reveal-waiting" initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.04 }}><span className="waiting-star" aria-hidden="true">✧</span><h2>The final reveal awaits</h2><p>The event-wide results will appear here once the admins complete all four trials and lock the top three teams.</p></motion.section>}
       </AnimatePresence>

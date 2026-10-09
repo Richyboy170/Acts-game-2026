@@ -4,6 +4,7 @@ import {
   aggregateTeamTotals,
   getGaugeState,
   getPhaseForScore,
+  getTeamBarMaximum,
   getTeamBarFillPercent,
   getTopTeams,
   validateScoreChange,
@@ -32,17 +33,23 @@ test('selects the correct background phase at each cumulative threshold', () => 
   assert.equal(getPhaseForScore(9000), 5);
 });
 
-test('extends the vertical gauge in 500 point steps after the last phase threshold', () => {
+test('keeps the vertical gauge filled at the top while its scale extends', () => {
   assert.deepEqual(getGaugeState(2200), { maximum: 2200, fillPercent: 100, label: '2,200' });
-  assert.deepEqual(getGaugeState(2201), { maximum: 2700, fillPercent: 81.52, label: '2,201' });
-  assert.deepEqual(getGaugeState(2700), { maximum: 3200, fillPercent: 84.38, label: '2,700' });
+  assert.deepEqual(getGaugeState(2201), { maximum: 2700, fillPercent: 100, label: '2,201' });
+  assert.deepEqual(getGaugeState(2700), { maximum: 2700, fillPercent: 100, label: '2,700' });
+  assert.deepEqual(getGaugeState(2701), { maximum: 3200, fillPercent: 100, label: '2,701' });
+  assert.equal(getGaugeState(9000).fillPercent, 100);
 });
 
-test('scales team bars to the shared team mean instead of pegging the leader at full width', () => {
-  assert.equal(getTeamBarFillPercent(200, [200, 200, 200, 200]), 50);
-  assert.equal(getTeamBarFillPercent(20, [20, 20, 20, 20]), 6.67);
-  assert.equal(getTeamBarFillPercent(400, [400, 100, 100, 100]), 74.07);
-  assert.equal(getTeamBarFillPercent(0, [0, 0]), 0);
+test('increases one shared team-bar maximum by 100 when the leader reaches it', () => {
+  assert.equal(getTeamBarMaximum([0, 0, 0]), 500);
+  assert.equal(getTeamBarMaximum([499, 120]), 500);
+  assert.equal(getTeamBarMaximum([500, 120]), 600);
+  assert.equal(getTeamBarMaximum([599, 120]), 600);
+  assert.equal(getTeamBarMaximum([600, 120]), 700);
+  assert.equal(getTeamBarMaximum([1567, 200]), 1600);
+  assert.equal(getTeamBarFillPercent(500, [500, 200]), 83.33);
+  assert.equal(getTeamBarFillPercent(200, [500, 200]), 33.33);
 });
 
 test('ranks teams using the sum from every game and shares tied places', () => {

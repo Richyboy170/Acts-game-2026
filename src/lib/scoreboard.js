@@ -1,8 +1,8 @@
 export const PHASE_THRESHOLDS = [300, 750, 1400, 2200];
 export const FINAL_GAUGE_THRESHOLD = PHASE_THRESHOLDS.at(-1);
 export const GAUGE_EXTENSION_STEP = 500;
-export const TEAM_BAR_MIN_SCALE = PHASE_THRESHOLDS[0];
-export const TEAM_BAR_LEADER_HEADROOM = 1.35;
+export const TEAM_BAR_INITIAL_MAX = 500;
+export const TEAM_BAR_SCALE_STEP = 100;
 
 export function aggregateTeamTotals(rows = [], teamIds = []) {
   const totals = new Map(teamIds.map((teamId) => [teamId, 0]));
@@ -28,9 +28,11 @@ export function getGaugeState(score) {
   const total = Math.max(0, Math.floor(Number(score) || 0));
   const additionalBands = total <= FINAL_GAUGE_THRESHOLD
     ? 0
-    : Math.floor((total - FINAL_GAUGE_THRESHOLD) / GAUGE_EXTENSION_STEP) + 1;
+    : Math.ceil((total - FINAL_GAUGE_THRESHOLD) / GAUGE_EXTENSION_STEP);
   const maximum = FINAL_GAUGE_THRESHOLD + additionalBands * GAUGE_EXTENSION_STEP;
-  const fillPercent = maximum === 0 ? 0 : Math.min(100, (total / maximum) * 100);
+  const fillPercent = total >= FINAL_GAUGE_THRESHOLD
+    ? 100
+    : maximum === 0 ? 0 : Math.min(100, (total / maximum) * 100);
 
   return {
     maximum,
@@ -39,14 +41,17 @@ export function getGaugeState(score) {
   };
 }
 
+export function getTeamBarMaximum(teamTotals = []) {
+  const maximumScore = Math.max(0, ...teamTotals.map(Number).filter(Number.isFinite));
+  if (maximumScore < TEAM_BAR_INITIAL_MAX) return TEAM_BAR_INITIAL_MAX;
+  const extensions = Math.floor((maximumScore - TEAM_BAR_INITIAL_MAX) / TEAM_BAR_SCALE_STEP) + 1;
+  return TEAM_BAR_INITIAL_MAX + extensions * TEAM_BAR_SCALE_STEP;
+}
+
 export function getTeamBarFillPercent(score, teamTotals = []) {
   const value = Math.max(0, Number(score) || 0);
-  const values = teamTotals.map(Number).filter(Number.isFinite).map((total) => Math.max(0, total));
-  if (values.length === 0) values.push(value);
-  const mean = values.reduce((sum, total) => sum + total, 0) / values.length;
-  const leader = Math.max(value, ...values);
-  const scale = Math.max(TEAM_BAR_MIN_SCALE, mean * 2, leader * TEAM_BAR_LEADER_HEADROOM);
-  return Math.round(Math.min(100, (value / scale) * 100) * 100) / 100;
+  const maximum = getTeamBarMaximum(teamTotals);
+  return Math.round(Math.min(100, (value / maximum) * 100) * 100) / 100;
 }
 
 export function getTopTeams(rows = [], teamIds = [], limit = 3) {

@@ -4,7 +4,7 @@ import { AnimatePresence, animate, motion, useReducedMotion } from 'motion/react
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatedNumber } from '@/components/animated-number.jsx';
 import { PHASE_BACKGROUNDS, TEAMS } from '@/lib/catalog.js';
-import { FINAL_GAUGE_THRESHOLD, GAUGE_EXTENSION_STEP, PHASE_THRESHOLDS, aggregateTeamTotals, getGaugeState, getPhaseForScore, getTeamBarFillPercent } from '@/lib/scoreboard.js';
+import { PHASE_THRESHOLDS, aggregateTeamTotals, getGaugeState, getPhaseForScore, getTeamBarFillPercent } from '@/lib/scoreboard.js';
 import { getBrowserSupabase } from '@/lib/supabase/browser.js';
 
 const GAME_IDS = ['sandwich', 'balloon-direction', 'water-cup', 'get-the-ball-off'];
@@ -241,8 +241,6 @@ export function Scoreboard() {
 
   const leftTeams = TEAMS.slice(0, 4);
   const rightTeams = TEAMS.slice(4);
-  const liveThresholdLabel = eventTotal >= FINAL_GAUGE_THRESHOLD;
-
   return (
     <main className="scoreboard" aria-label="Live team scoreboard">
       <div className="scoreboard-backgrounds" aria-hidden="true">
@@ -285,13 +283,11 @@ export function Scoreboard() {
           <div className="meter-total"><AnimatedNumber value={eventTotal} duration={0.9} /><span className="meter-live-caption">Event points</span></div>
           <div className="meter-shell">
             <div className="meter-ticks" aria-hidden="true">
-              {PHASE_THRESHOLDS.slice(0, 3).map((threshold) => (
+              {PHASE_THRESHOLDS.map((threshold) => (
                 <div key={threshold} className="meter-tick" style={{ bottom: `${Math.min(100, (threshold / gauge.maximum) * 100)}%` }}>
                   <span className="meter-tick-label">{new Intl.NumberFormat('en-US').format(threshold)}</span>
                 </div>
               ))}
-              {!liveThresholdLabel && <div className="meter-tick" style={{ bottom: '100%' }}><span className="meter-tick-label">{new Intl.NumberFormat('en-US').format(FINAL_GAUGE_THRESHOLD)}</span></div>}
-              {liveThresholdLabel && <div className="meter-tick" style={{ bottom: '100%' }}><span className="meter-tick-label live"><AnimatedNumber value={eventTotal} duration={0.55} /></span></div>}
             </div>
             <div className="meter-glow" />
             <div className="meter-track" ref={meterRef} role="progressbar" aria-label="Combined event points" aria-valuemin={0} aria-valuemax={gauge.maximum} aria-valuenow={eventTotal}>
