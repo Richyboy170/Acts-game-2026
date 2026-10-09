@@ -27,7 +27,7 @@ begin
   -- Serialize the reset against score writes and finalization snapshots.
   perform pg_advisory_xact_lock(hashtextextended('acts-scoreboard-event', 0));
 
-  delete from public.score_entries;
+  delete from public.score_entries where id is not null;
   get diagnostics v_deleted_entries = row_count;
 
   update public.team_score_totals
