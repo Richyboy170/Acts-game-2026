@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatedNumber } from '@/components/animated-number.jsx';
 import { GAMES, TEAMS } from '@/lib/catalog.js';
-import { isResetConfirmationValid } from '@/lib/scoreboard.js';
+import { getAdminScoreDelta, isResetConfirmationValid } from '@/lib/scoreboard.js';
 
 const formatTime = (value) => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 
@@ -42,8 +42,8 @@ export function AdminScoreManager() {
   async function submitAdjustment(team, game) {
     const key = `${team.id}:${game.id}`;
     const form = forms[key] || {};
-    const delta = Number(form.delta);
-    if (!Number.isInteger(delta) || delta === 0) { setMessage('Enter a non-zero whole number.'); return; }
+    const delta = getAdminScoreDelta(form.delta, form.direction ?? 1);
+    if (delta === null) { setMessage('Enter a positive whole-number amount.'); return; }
     setBusy(key); setMessage('');
     try {
       const response = await fetch('/api/admin/scores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gameId: game.id, teamId: team.id, kind: 'adjustment', delta, note: form.note || '', idempotencyKey: crypto.randomUUID() }) });
@@ -120,7 +120,22 @@ export function AdminScoreManager() {
           <AnimatePresence initial={false}>{expanded[team.id] && <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="team-panel-expanded">
             <div className="adjustment-form">{GAMES.filter((game) => filter === 'all' || game.id === filter).map((game) => {
               const key = `${team.id}:${game.id}`; const form = forms[key] || {};
-              return <div className="adjustment-game" key={game.id}><strong>{game.name}</strong><label className="field-label" htmlFor={`delta-${key}`}>Signed points (e.g. −5 or +5)</label><input className="field-input" id={`delta-${key}`} inputMode="text" type="text" autoComplete="off" autoCapitalize="off" spellCheck={false} placeholder="+5 or -5" value={form.delta ?? ''} onChange={(event) => setForms((current) => ({ ...current, [key]: { ...current[key], delta: event.target.value } }))} /><label className="field-label" htmlFor={`note-${key}`}>Optional note</label><input className="field-input" id={`note-${key}`} value={form.note ?? ''} maxLength={500} onChange={(event) => setForms((current) => ({ ...current, [key]: { ...current[key], note: event.target.value } }))} placeholder="Reason for correction" /><button className="secondary-button" type="button" disabled={Boolean(busy)} onClick={() => submitAdjustment(team, game)}>{busy === key ? 'Saving…' : 'Save correction'}</button></div>;
+              const direction = form.direction ?? 1;
+              return <div className="adjustment-game" key={game.id}>
+                <strong>{game.name}</strong>
+                <div className="adjustment-game-field">
+                  <label className="field-label" htmlFor={`delta-${key}`}>Points to add or remove</label>
+                  <div className="adjustment-sign-control">
+                    <button className={`adjustment-sign-toggle${direction < 0 ? ' is-negative' : ''}`} type="button" aria-label={direction < 0 ? 'Switch to adding points' : 'Switch to removing points'} aria-pressed={direction < 0} onClick={() => setForms((current) => ({ ...current, [key]: { ...current[key], direction: (current[key]?.direction ?? 1) * -1 } }))}>{direction < 0 ? '−' : '+'}</button>
+                    <input className="field-input" id={`delta-${key}`} inputMode="numeric" type="number" min="1" step="1" placeholder="Amount" value={form.delta ?? ''} onChange={(event) => setForms((current) => ({ ...current, [key]: { ...current[key], delta: event.target.value } }))} />
+                  </div>
+                </div>
+                <div className="adjustment-game-field">
+                  <label className="field-label" htmlFor={`note-${key}`}>Optional note</label>
+                  <input className="field-input" id={`note-${key}`} value={form.note ?? ''} maxLength={500} onChange={(event) => setForms((current) => ({ ...current, [key]: { ...current[key], note: event.target.value } }))} placeholder="Reason for correction" />
+                </div>
+                <button className="secondary-button" type="button" disabled={Boolean(busy)} onClick={() => submitAdjustment(team, game)}>{busy === key ? 'Saving…' : 'Save correction'}</button>
+              </div>;
             })}</div>
             <div className="history-list">{entries.length ? entries.map((entry) => <div className="history-entry" key={entry.id}><div className="history-title">{GAMES.find((game) => game.id === entry.game_id)?.name} · {entry.entry_type === 'award' ? 'Award' : 'Correction'}</div><div className={`history-delta${entry.points_delta < 0 ? ' negative' : ''}`}>{entry.points_delta > 0 ? '+' : ''}{entry.points_delta}</div><div className="history-meta">{formatTime(entry.created_at)} · {entry.actor}</div>{entry.note && <div className="history-note">{entry.note}</div>}</div>) : <div className="empty-state">No recorded interactions for this filter yet.</div>}</div>
           </motion.div>}</AnimatePresence>

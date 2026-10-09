@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { formatSupabaseResetError } from '@/lib/admin-errors.js';
 import { getAdminSupabase } from '@/lib/supabase/admin.js';
 import { isSameOriginRequest, jsonError, requestHasAdminSession } from '@/lib/admin-request.js';
 
@@ -33,6 +34,6 @@ export async function POST(request) {
     return NextResponse.json({ ...data, deletedEntries: data?.deleted_entries ?? 0 });
   } catch (error) {
     console.error('Unable to reset event scores:', { code: error.code, message: error.message });
-    return jsonError('The scores could not be reset. Apply the event reset migration and check the Supabase setup.', 503);
+    return jsonError(formatSupabaseResetError(error), 503);
   }
 }

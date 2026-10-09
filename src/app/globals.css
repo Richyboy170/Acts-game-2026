@@ -244,10 +244,15 @@ a { color: inherit; text-decoration: none; }
 .history-note { grid-column: 1 / -1; color: #c6bba1; font-style: italic; }
 .team-panel-expanded { overflow: hidden; }
 .adjustment-form { grid-template-columns: 1fr; }
-.adjustment-game { display: grid; grid-template-columns: minmax(120px, .55fr) minmax(120px, .8fr) minmax(130px, .8fr) minmax(180px, 1.3fr) auto; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid rgba(229,208,164,.09); }
+.adjustment-game { display: grid; grid-template-columns: minmax(120px, .55fr) minmax(190px, .95fr) minmax(190px, 1.15fr) auto; align-items: end; gap: 10px; padding: 11px 0; border-bottom: 1px solid rgba(229,208,164,.09); }
 .adjustment-game > strong { color: #ead8b0; font: 600 .78rem var(--display-font); }
 .adjustment-game .field-label { margin: 0; font-size: .67rem; }
 .adjustment-game .field-input { padding: 9px 10px; font-size: .78rem; }
+.adjustment-game-field { display: grid; gap: 6px; min-width: 0; }
+.adjustment-sign-control { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 7px; }
+.adjustment-sign-toggle { display: grid; place-items: center; width: 44px; height: 42px; border: 1px solid rgba(231, 206, 151, .36); border-radius: 9px; background: rgba(14, 20, 29, .8); color: #f0d492; cursor: pointer; font-size: 1.35rem; font-weight: 800; line-height: 1; transition: border-color .2s ease, background .2s ease, color .2s ease; }
+.adjustment-sign-toggle:hover, .adjustment-sign-toggle:focus-visible { border-color: var(--gold); background: rgba(217, 181, 106, .13); outline: none; }
+.adjustment-sign-toggle.is-negative { color: #f1a894; }
 .adjustment-game .secondary-button { padding: 9px 11px; font-size: .72rem; }
 .toast-spark { position: fixed; z-index: 20; right: 24px; top: 30%; color: #f6d98e; font-size: 2rem; text-shadow: 0 0 22px #eac86e; pointer-events: none; }
 .scoreboard-connect-notice { position: absolute; right: 16px; bottom: 16px; z-index: 3; padding: 8px 11px; border: 1px solid rgba(230,174,105,.3); border-radius: 99px; background: rgba(5,9,15,.72); color: #e6c18e; font-size: .68rem; }
@@ -391,8 +396,8 @@ a { color: inherit; text-decoration: none; }
   .game-score-cell strong { font-size: .73rem; }
   .team-panel-tools { margin-inline: 10px; }
   .adjustment-form { grid-template-columns: 1fr; padding-inline: 10px; }
-  .adjustment-game { grid-template-columns: 1fr 1fr; }
-  .adjustment-game > strong, .adjustment-game .field-label:nth-of-type(3) { grid-column: 1 / -1; }
+  .adjustment-game { grid-template-columns: minmax(0, 1fr); gap: 9px; }
+  .adjustment-game-field { grid-column: 1 / -1; }
   .adjustment-game button { grid-column: 1 / -1; width: 100%; }
   .adjustment-form .note-field { grid-column: 1 / -1; }
   .adjustment-form button { grid-column: 1 / -1; width: 100%; }
